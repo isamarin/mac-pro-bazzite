@@ -1,0 +1,2 @@
+# FirePro D700 (Tahiti, GCN 1.0): use amdgpu instead of radeon for Vulkan/RADV
+kargs = ["radeon.si_support=0", "amdgpu.si_support=1"]

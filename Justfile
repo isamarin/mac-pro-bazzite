@@ -121,6 +121,12 @@ build $target_image=image_name $tag=default_tag:
     LABELS+=("--label" "org.opencontainers.image.title={{ image_name }}")
     LABELS+=("--label" "org.opencontainers.image.vendor={{ repo_organization }}")
 
+    # kmod-wl is built per kernel, so pick the akmods tag matching the base image kernel
+    BASE_IMAGE=$(sed -n 's/^ARG BASE_IMAGE=//p' Containerfile)
+    KERNEL=$(skopeo inspect "docker://${BASE_IMAGE}" | jq -r '.Labels["ostree.linux"]')
+    [[ "${KERNEL}" =~ \.fc([0-9]+)\. ]]
+    BUILD_ARGS+=("--build-arg" "AKMODS_TAG=ogc-${BASH_REMATCH[1]}-${KERNEL%.*}")
+
     # This actually builds the image!
     PODMAN_BUILD_ARGS=("${BUILD_ARGS[@]}" "${LABELS[@]}" --pull=newer --tag "${target_image}:${tag}" --file Containerfile)
 

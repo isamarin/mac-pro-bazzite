@@ -1,10 +1,17 @@
+ARG BASE_IMAGE=ghcr.io/ublue-os/bazzite:stable
+# Must match the base image kernel exactly; `just build` derives it from BASE_IMAGE
+ARG AKMODS_TAG
+
+FROM ghcr.io/ublue-os/akmods:${AKMODS_TAG} AS akmods
+
 # Allow build scripts to be referenced without being copied into the final image
 FROM scratch AS ctx
 COPY build_files /
 COPY system_files /system_files
+COPY --from=akmods /rpms /akmods
 
 # Base Image
-FROM ghcr.io/ublue-os/bazzite:stable
+FROM ${BASE_IMAGE}
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:testing
 # FROM ghcr.io/ublue-os/aurora:stable

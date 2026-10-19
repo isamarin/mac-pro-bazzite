@@ -5,6 +5,9 @@ set -ouex pipefail
 # Copy the contents of system_files/ of the git repo to /
 cp -avf "/ctx/system_files"/. /
 
+### Mac Pro 6,1: Broadcom BCM4360 Wi-Fi (wl), dropped from stock Bazzite
+dnf5 install -y /ctx/akmods/common/broadcom-wl-*.rpm /ctx/akmods/kmods/kmod-wl-*.rpm
+
 ### Install packages
 
 # Packages can be installed from any enabled yum repo on the image.
