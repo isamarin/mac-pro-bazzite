@@ -5,6 +5,26 @@ set -ouex pipefail
 # Copy the contents of system_files/ of the git repo to /
 cp -avf "/ctx/system_files"/. /
 
+### Mac Pro 6,1: Broadcom BCM4360 Wi-Fi. Bazzite ships wl but blacklists it; fail the build if it stops shipping it
+[ -n "$(find /usr/lib/modules -name 'wl.ko*')" ]
+rm -f /etc/modprobe.d/default-disable-broadcom-wl.conf
+
+### Mac Pro 6,1: patched amdgpu (SI DPM fix) replaces the stock module, initramfs included
+KVER=$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}' kernel-core)
+install -m644 /ctx/amdgpu/amdgpu.ko "/usr/lib/modules/$KVER/kernel/drivers/gpu/drm/amd/amdgpu/amdgpu.ko"
+depmod -a "$KVER"
+dracut --no-hostonly --kver "$KVER" --reproducible --add ostree -f "/usr/lib/modules/$KVER/initramfs.img"
+chmod 0600 "/usr/lib/modules/$KVER/initramfs.img"
+
+### Always-on server: resume from deep suspend hangs this machine
+systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
+
+### Server stack: Docker, nginx (proxy for GitLab); GitLab and Home Assistant run as quadlets from /etc/containers/systemd
+dnf5 install -y moby-engine docker-compose nginx
+systemctl enable docker.service nginx.service
+# 2222 and 8123 are already open: the FedoraWorkstation zone allows 1025-65535
+firewall-offline-cmd --add-service=http
+
 ### Install packages
 
 # Packages can be installed from any enabled yum repo on the image.

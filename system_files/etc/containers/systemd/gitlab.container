@@ -1,0 +1,25 @@
+[Unit]
+Description=GitLab CE
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+Image=docker.io/gitlab/gitlab-ce:latest
+ContainerName=gitlab
+# HTTP only on localhost: nginx proxies it; SSH on 2222 because the host sshd owns 22
+PublishPort=127.0.0.1:8929:80
+PublishPort=2222:22
+ShmSize=256m
+Volume=gitlab-config:/etc/gitlab
+Volume=gitlab-logs:/var/log/gitlab
+Volume=gitlab-data:/var/opt/gitlab
+# Set external_url to the name other machines use to reach this Mac Pro
+Environment=GITLAB_OMNIBUS_CONFIG="external_url 'http://mac-pro.local'; gitlab_rails['gitlab_shell_ssh_port'] = 2222"
+
+[Service]
+# First start pulls a multi-GB image and runs reconfigure
+TimeoutStartSec=1800
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
