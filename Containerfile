@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=ghcr.io/ublue-os/bazzite:stable
+ARG BASE_IMAGE=ghcr.io/ublue-os/bazzite-gnome:stable
 # Must match the base image kernel exactly; `just build` derives it from BASE_IMAGE
 ARG AKMODS_TAG
 

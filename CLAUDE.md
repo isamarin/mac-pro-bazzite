@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A custom [bootc](https://github.com/bootc-dev/bootc) OS image of Bazzite (`ghcr.io/ublue-os/bazzite:stable`) for the Mac Pro 6,1 (Late 2013) with dual FirePro D700, derived from the Universal Blue `image-template`. Published as `ghcr.io/isamarin/mac-pro-bazzite`. The output is an OCI container image pushed to GHCR that machines switch to with `bootc switch`. There is no application code — changes are about what goes into the OS image.
+A custom [bootc](https://github.com/bootc-dev/bootc) OS image of Bazzite GNOME (`ghcr.io/ublue-os/bazzite-gnome:stable`) for the Mac Pro 6,1 (Late 2013) with dual FirePro D700, derived from the Universal Blue `image-template`. Published as `ghcr.io/isamarin/mac-pro-bazzite`. The output is an OCI container image pushed to GHCR that machines switch to with `bootc switch`. There is no application code — changes are about what goes into the OS image.
 
 ## Commands
 
@@ -25,14 +25,19 @@ There are no tests. The real validation is the final `RUN bootc container lint` 
 2. The main stage starts from `BASE_IMAGE` (an `ARG` at the top of `Containerfile`) and runs `/ctx/build.sh` with caches on `/var/cache`, `/var/log` and a tmpfs `/tmp`.
 3. `build_files/build.sh` first copies `system_files/` over `/` (so `system_files/etc/...` → `/etc/...`, `system_files/usr/...` → `/usr/...`), then installs packages with `dnf5` and enables systemd units. Put package installs, COPR enables (disable them again afterwards so they don't ship enabled) and `systemctl enable` here.
 4. Mac Pro specifics:
-   - Wi-Fi (Broadcom BCM4360) needs the `wl` driver, which stock Bazzite does not ship. `build.sh` installs `broadcom-wl` + `kmod-wl` from `ghcr.io/ublue-os/akmods:<AKMODS_TAG>`. The kmod is built for one exact kernel, so `just build` reads the base image's `ostree.linux` label with `skopeo` and passes `AKMODS_TAG=ogc-<fedora>-<kernel>`. Plain `podman build` without that build arg fails. Do not use the floating `ogc-44` tag; it can be ahead of `bazzite:stable`.
+   - Wi-Fi (Broadcom BCM4360) needs the `wl` driver, which stock Bazzite does not ship. `build.sh` installs `broadcom-wl` + `kmod-wl` from `ghcr.io/ublue-os/akmods:<AKMODS_TAG>`. The kmod is built for one exact kernel, so `just build` reads the base image's `ostree.linux` label with `skopeo` and passes `AKMODS_TAG=ogc-<fedora>-<kernel>`. Plain `podman build` without that build arg fails. Do not use the floating `ogc-44` tag; it can be ahead of `bazzite-gnome:stable`.
    - The D700 (Tahiti, GCN 1.0) is switched from `radeon` to `amdgpu` through `system_files/usr/lib/bootc/kargs.d/10-macpro-amdgpu.toml`. kargs.d is applied on `bootc switch`/`bootc upgrade`, so install with `bootc switch`, not `rpm-ostree rebase`.
-5. Static config files belong in `system_files/`, not in heredocs in `build.sh`. Prefer `/usr` over `/etc`; `/var` and `/opt` are not reliably preserved by bootc deploys (see the commented `/opt` note in `Containerfile`).
+5. Server stack:
+   - Docker (`moby-engine`, `docker-compose`) and nginx are installed and enabled in `build.sh`. The same file opens firewall ports 80, 2222 and 8123 with `firewall-offline-cmd`.
+   - GitLab CE and Home Assistant are podman quadlets in `system_files/etc/containers/systemd/`, not Docker containers. They live in `/etc` so the GitLab `external_url` can be edited on the machine, and their data is in named podman volumes.
+   - GitLab HTTP listens on `127.0.0.1:8929` behind nginx (`etc/nginx/conf.d/gitlab.conf`, `default_server` on :80), and GitLab SSH is on port 2222. The `nginx.service.d` drop-in turns on the SELinux boolean `httpd_can_network_connect`; without it the proxy returns 502.
+   - Home Assistant uses host networking and is served directly on :8123.
+6. Static config files belong in `system_files/`, not in heredocs in `build.sh`. Prefer `/usr` over `/etc`; `/var` and `/opt` are not reliably preserved by bootc deploys (see the commented `/opt` note in `Containerfile`).
 
 ## Configuration
 
 - `image-template.env` — `IMAGE_NAME`, `REPO_ORGANIZATION`, description/keywords/logo, `DEFAULT_TAG`, `BIB_IMAGE`. `IMAGE_NAME` drives the GHCR image name and the Justfile's OCI/ArtifactHub labels.
-- `disk_config/*.toml` — bootc-image-builder configs. `disk.toml` is used for qcow2/raw; `iso.toml` (KDE installer) is used for ISOs, and its kickstart runs `bootc switch` to this image.
+- `disk_config/*.toml` — bootc-image-builder configs. `disk.toml` is used for qcow2/raw; `iso.toml` (GNOME installer) is used for ISOs, and its kickstart runs `bootc switch` to this image.
 
 ## CI (`.github/workflows/`)
 

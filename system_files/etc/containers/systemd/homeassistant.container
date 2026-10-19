@@ -1,0 +1,19 @@
+[Unit]
+Description=Home Assistant
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+Image=ghcr.io/home-assistant/home-assistant:stable
+ContainerName=homeassistant
+# Host network for device discovery (mDNS, SSDP); UI on :8123
+Network=host
+Volume=homeassistant-config:/config
+Volume=/etc/localtime:/etc/localtime:ro
+
+[Service]
+TimeoutStartSec=900
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

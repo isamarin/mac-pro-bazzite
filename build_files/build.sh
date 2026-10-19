@@ -8,6 +8,11 @@ cp -avf "/ctx/system_files"/. /
 ### Mac Pro 6,1: Broadcom BCM4360 Wi-Fi (wl), dropped from stock Bazzite
 dnf5 install -y /ctx/akmods/common/broadcom-wl-*.rpm /ctx/akmods/kmods/kmod-wl-*.rpm
 
+### Server stack: Docker, nginx (proxy for GitLab); GitLab and Home Assistant run as quadlets from /etc/containers/systemd
+dnf5 install -y moby-engine docker-compose nginx
+systemctl enable docker.service nginx.service
+firewall-offline-cmd --add-service=http --add-port=2222/tcp --add-port=8123/tcp
+
 ### Install packages
 
 # Packages can be installed from any enabled yum repo on the image.
