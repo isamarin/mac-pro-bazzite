@@ -5,13 +5,18 @@ set -ouex pipefail
 # Copy the contents of system_files/ of the git repo to /
 cp -avf "/ctx/system_files"/. /
 
-### Mac Pro 6,1: Broadcom BCM4360 Wi-Fi (wl), dropped from stock Bazzite
-dnf5 install -y /ctx/akmods/common/broadcom-wl-*.rpm /ctx/akmods/kmods/kmod-wl-*.rpm
+### Mac Pro 6,1: Broadcom BCM4360 Wi-Fi. Bazzite ships wl but blacklists it; fail the build if it stops shipping it
+[ -n "$(find /usr/lib/modules -name 'wl.ko*')" ]
+rm -f /etc/modprobe.d/default-disable-broadcom-wl.conf
+
+### Always-on server: resume from deep suspend hangs this machine
+systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
 
 ### Server stack: Docker, nginx (proxy for GitLab); GitLab and Home Assistant run as quadlets from /etc/containers/systemd
 dnf5 install -y moby-engine docker-compose nginx
 systemctl enable docker.service nginx.service
-firewall-offline-cmd --add-service=http --add-port=2222/tcp --add-port=8123/tcp
+# 2222 and 8123 are already open: the FedoraWorkstation zone allows 1025-65535
+firewall-offline-cmd --add-service=http
 
 ### Install packages
 

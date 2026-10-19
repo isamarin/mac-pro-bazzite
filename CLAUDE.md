@@ -8,7 +8,7 @@ A custom [bootc](https://github.com/bootc-dev/bootc) OS image of Bazzite GNOME (
 
 ## Commands
 
-All tasks run through `just` (reads variables from `image-template.env`). Requires `podman`, plus `skopeo` and `jq` for `just build`; disk/VM recipes also need root podman and `bootc-image-builder`.
+All tasks run through `just` (reads variables from `image-template.env`). Requires `podman`; disk/VM recipes also need root podman and `bootc-image-builder`.
 
 - `just build` — build the container image locally (`podman build -f Containerfile`), tagged `<IMAGE_NAME>:<DEFAULT_TAG>`
 - `just build-qcow2` / `build-raw` / `build-iso` — build a disk image from `localhost/<image>` via bootc-image-builder into `output/`; `rebuild-*` does `build` first
@@ -21,14 +21,15 @@ There are no tests. The real validation is the final `RUN bootc container lint` 
 
 ## How the image is assembled
 
-1. `Containerfile` stage `ctx` (FROM scratch) holds `build_files/`, `system_files/` and the akmods RPMs (`/akmods`) so they are bind-mounted during build but not copied into the final image.
-2. The main stage starts from `BASE_IMAGE` (an `ARG` at the top of `Containerfile`) and runs `/ctx/build.sh` with caches on `/var/cache`, `/var/log` and a tmpfs `/tmp`.
+1. `Containerfile` stage `ctx` (FROM scratch) holds `build_files/`, `system_files/` so they are bind-mounted during build but not copied into the final image.
+2. The main stage starts from `bazzite-gnome:stable` and runs `/ctx/build.sh` with caches on `/var/cache`, `/var/log` and a tmpfs `/tmp`.
 3. `build_files/build.sh` first copies `system_files/` over `/` (so `system_files/etc/...` → `/etc/...`, `system_files/usr/...` → `/usr/...`), then installs packages with `dnf5` and enables systemd units. Put package installs, COPR enables (disable them again afterwards so they don't ship enabled) and `systemctl enable` here.
 4. Mac Pro specifics:
-   - Wi-Fi (Broadcom BCM4360) needs the `wl` driver, which stock Bazzite does not ship. `build.sh` installs `broadcom-wl` + `kmod-wl` from `ghcr.io/ublue-os/akmods:<AKMODS_TAG>`. The kmod is built for one exact kernel, so `just build` reads the base image's `ostree.linux` label with `skopeo` and passes `AKMODS_TAG=ogc-<fedora>-<kernel>`. Plain `podman build` without that build arg fails. Do not use the floating `ogc-44` tag; it can be ahead of `bazzite-gnome:stable`.
-   - The D700 (Tahiti, GCN 1.0) is switched from `radeon` to `amdgpu` through `system_files/usr/lib/bootc/kargs.d/10-macpro-amdgpu.toml`. kargs.d is applied on `bootc switch`/`bootc upgrade`, so install with `bootc switch`, not `rpm-ostree rebase`.
+   - Wi-Fi (Broadcom BCM4360): Bazzite already ships `broadcom-wl` + `kmod-wl` but blacklists `wl` with `/etc/modprobe.d/default-disable-broadcom-wl.conf`. `build.sh` deletes that file, and the build fails if `wl.ko` disappears from the base image (Bazzite has dropped it before).
+   - GPU: kernel 7.x binds the D700 (Tahiti, SI) to `amdgpu` by default, and RADV Vulkan works. No kernel args are needed.
+   - Suspend is masked in `build.sh`: the machine hung on resume from deep suspend, and it runs always-on services.
 5. Server stack:
-   - Docker (`moby-engine`, `docker-compose`) and nginx are installed and enabled in `build.sh`. The same file opens firewall ports 80, 2222 and 8123 with `firewall-offline-cmd`.
+   - Docker (`moby-engine`, `docker-compose`) and nginx are installed and enabled in `build.sh`. The same file opens port 80 with `firewall-offline-cmd`; the default FedoraWorkstation zone already allows 1025-65535, which covers 2222 and 8123.
    - GitLab CE and Home Assistant are podman quadlets in `system_files/etc/containers/systemd/`, not Docker containers. They live in `/etc` so the GitLab `external_url` can be edited on the machine, and their data is in named podman volumes.
    - GitLab HTTP listens on `127.0.0.1:8929` behind nginx (`etc/nginx/conf.d/gitlab.conf`, `default_server` on :80), and GitLab SSH is on port 2222. The `nginx.service.d` drop-in turns on the SELinux boolean `httpd_can_network_connect`; without it the proxy returns 502.
    - Home Assistant uses host networking and is served directly on :8123.
