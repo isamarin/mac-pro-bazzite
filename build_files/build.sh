@@ -9,6 +9,13 @@ cp -avf "/ctx/system_files"/. /
 [ -n "$(find /usr/lib/modules -name 'wl.ko*')" ]
 rm -f /etc/modprobe.d/default-disable-broadcom-wl.conf
 
+### Mac Pro 6,1: patched amdgpu (SI DPM fix) replaces the stock module, initramfs included
+KVER=$(rpm -q --qf '%{VERSION}-%{RELEASE}.%{ARCH}' kernel-core)
+install -m644 /ctx/amdgpu/amdgpu.ko "/usr/lib/modules/$KVER/kernel/drivers/gpu/drm/amd/amdgpu/amdgpu.ko"
+depmod -a "$KVER"
+dracut --no-hostonly --kver "$KVER" --reproducible --add ostree -f "/usr/lib/modules/$KVER/initramfs.img"
+chmod 0600 "/usr/lib/modules/$KVER/initramfs.img"
+
 ### Always-on server: resume from deep suspend hangs this machine
 systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
 

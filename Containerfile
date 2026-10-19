@@ -1,10 +1,20 @@
+ARG BASE_IMAGE=ghcr.io/ublue-os/bazzite-gnome:stable
+
+# Patched amdgpu: without it SI DPM keeps the MacPro6,1 D700 at 300/150 MHz under load
+FROM ${BASE_IMAGE} AS amdgpu
+RUN --mount=type=bind,source=amdgpu,target=/amdgpu \
+    --mount=type=cache,dst=/var/cache \
+    --mount=type=tmpfs,dst=/tmp \
+    /amdgpu/build.sh
+
 # Allow build scripts to be referenced without being copied into the final image
 FROM scratch AS ctx
 COPY build_files /
 COPY system_files /system_files
+COPY --from=amdgpu /out /amdgpu
 
 # Base Image
-FROM ghcr.io/ublue-os/bazzite-gnome:stable
+FROM ${BASE_IMAGE}
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:testing
 # FROM ghcr.io/ublue-os/aurora:stable

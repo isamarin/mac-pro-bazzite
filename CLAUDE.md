@@ -21,12 +21,16 @@ There are no tests. The real validation is the final `RUN bootc container lint` 
 
 ## How the image is assembled
 
-1. `Containerfile` stage `ctx` (FROM scratch) holds `build_files/`, `system_files/` so they are bind-mounted during build but not copied into the final image.
-2. The main stage starts from `bazzite-gnome:stable` and runs `/ctx/build.sh` with caches on `/var/cache`, `/var/log` and a tmpfs `/tmp`.
+1. `Containerfile` stage `amdgpu` (FROM the base image) runs `amdgpu/build.sh` to build a patched `amdgpu.ko`. Stage `ctx` (FROM scratch) holds `build_files/`, `system_files/` and that module (`/amdgpu`), so they are bind-mounted during build but not copied into the final image.
+2. The main stage starts from `BASE_IMAGE` (`bazzite-gnome:stable`, an `ARG` at the top of `Containerfile`) and runs `/ctx/build.sh` with caches on `/var/cache`, `/var/log` and a tmpfs `/tmp`.
 3. `build_files/build.sh` first copies `system_files/` over `/` (so `system_files/etc/...` → `/etc/...`, `system_files/usr/...` → `/usr/...`), then installs packages with `dnf5` and enables systemd units. Put package installs, COPR enables (disable them again afterwards so they don't ship enabled) and `systemctl enable` here.
 4. Mac Pro specifics:
    - Wi-Fi (Broadcom BCM4360): Bazzite already ships `broadcom-wl` + `kmod-wl` but blacklists `wl` with `/etc/modprobe.d/default-disable-broadcom-wl.conf`. `build.sh` deletes that file, and the build fails if `wl.ko` disappears from the base image (Bazzite has dropped it before).
-   - GPU: kernel 7.x binds the D700 (Tahiti, SI) to `amdgpu` by default, and RADV Vulkan works. No kernel args are needed.
+   - GPU: kernel 7.x binds the D700 (Tahiti, SI) to `amdgpu` by default, and RADV Vulkan works, so no kernel args are needed. However, on MacPro6,1 the SI DPM keeps both cards at 300 MHz core / 150 MHz memory even under load, and `high`/`performance` do not help on the stock kernel.
+     - `amdgpu/build.sh` fixes this. It sparse-clones `drivers/gpu/drm` from `OpenGamingCollective/linux` at the tag matching the base image's `kernel-core` (`7.2.9-ogc3.1` → `v7.2.9-ogc3`), applies `amdgpu/macpro61-amdgpu-si-dpm-performance.patch` (from flammafex/linux-mac), builds it with `M=` against the base image's `kernel-devel`, and strips it. Without the symlink of `amd/` into the kernel-devel tree, the trace headers fail to compile.
+     - `build.sh` overwrites the stock `amdgpu.ko`, then runs `depmod` and regenerates the initramfs, which contains amdgpu.
+     - The patch only takes effect in the `performance` power state. The udev rule `system_files/usr/lib/udev/rules.d/90-macpro-gpu-performance.rules` sets that state at boot.
+     - Kernel module signing is not enforced: no Secure Boot on this Mac, and lockdown is `none`.
    - Suspend is masked in `build.sh`: the machine hung on resume from deep suspend, and it runs always-on services.
 5. Server stack:
    - Docker (`moby-engine`, `docker-compose`) and nginx are installed and enabled in `build.sh`. The same file opens port 80 with `firewall-offline-cmd`; the default FedoraWorkstation zone already allows 1025-65535, which covers 2222 and 8123.

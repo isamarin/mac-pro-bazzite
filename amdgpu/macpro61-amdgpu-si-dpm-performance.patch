@@ -1,0 +1,33 @@
+# From https://github.com/flammafex/linux-mac (packaging/arch/0002-macpro61-amdgpu-si-dpm-performance.patch)
+--- a/drivers/gpu/drm/amd/pm/legacy-dpm/si_dpm.c
++++ b/drivers/gpu/drm/amd/pm/legacy-dpm/si_dpm.c
+@@ -23,6 +23,7 @@
+ 
+ #include <linux/module.h>
+ #include <linux/pci.h>
++#include <linux/dmi.h>
+ 
+ #include "amdgpu.h"
+ #include "amdgpu_pm.h"
+@@ -3539,6 +3540,21 @@
+ 		disable_mclk_switching = true;
+ 		disable_sclk_switching = true;
+ 	}
++
++	/*
++	 * MacPro6,1 FirePro D500/D700 workaround:
++	 *
++	 * Tahiti DPM may remain at its lowest performance level during
++	 * compute workloads.  When the user explicitly requests the
++	 * performance power state, collapse both SCLK and MCLK switching
++	 * to the highest clocks supplied by the VBIOS power table.
++	 */
++	if (adev->asic_type == CHIP_TAHITI &&
++		dmi_match(DMI_PRODUCT_NAME, "MacPro6,1") &&
++		adev->pm.dpm.user_state == POWER_STATE_TYPE_PERFORMANCE) {
++		disable_mclk_switching = true;
++		disable_sclk_switching = true;
++	}
+ 
+ 	if (adev->pm.ac_power)
+ 		max_limits = &adev->pm.dpm.dyn_state.max_clock_voltage_on_ac;
