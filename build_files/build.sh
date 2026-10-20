@@ -16,9 +16,6 @@ depmod -a "$KVER"
 dracut --no-hostonly --kver "$KVER" --reproducible --add ostree -f "/usr/lib/modules/$KVER/initramfs.img"
 chmod 0600 "/usr/lib/modules/$KVER/initramfs.img"
 
-### Mac Pro 6,1: gamemode raises the display D700 to "performance" only while a game runs (/etc/gamemode.ini)
-dnf5 install -y gamemode
-
 ### Always-on server: resume from deep suspend hangs this machine
 systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
 

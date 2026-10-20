@@ -1,8 +1,0 @@
-// Let gamemode (running as a wheel user) switch the display D700 power state without a password
-polkit.addRule(function (action, subject) {
-    if (action.id == "org.freedesktop.policykit.exec" &&
-        action.lookup("program") == "/usr/libexec/macpro-gpu-power" &&
-        subject.isInGroup("wheel")) {
-        return polkit.Result.YES;
-    }
-});
