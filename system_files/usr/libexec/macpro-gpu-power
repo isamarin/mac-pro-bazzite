@@ -1,7 +1,0 @@
-#!/bin/bash
-# Called by gamemode via pkexec: the patched si_dpm only raises D700 clocks in the "performance" state
-set -eu
-case "${1:-}" in
-performance | balanced) echo "$1" >/sys/bus/pci/devices/0000:06:00.0/power_dpm_state ;;
-*) echo "usage: $0 performance|balanced" >&2 && exit 2 ;;
-esac
