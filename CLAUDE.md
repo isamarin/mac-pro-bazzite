@@ -29,7 +29,7 @@ There are no tests. The real validation is the final `RUN bootc container lint` 
    - GPU: kernel 7.x binds the D700 (Tahiti, SI) to `amdgpu` by default, and RADV Vulkan works, so no kernel args are needed. However, on MacPro6,1 the SI DPM keeps both cards at 300 MHz core / 150 MHz memory even under load, and `high`/`performance` do not help on the stock kernel.
      - `amdgpu/build.sh` fixes this. It sparse-clones `drivers/gpu/drm` from `OpenGamingCollective/linux` at the tag matching the base image's `kernel-core` (`7.2.9-ogc3.1` → `v7.2.9-ogc3`), applies `amdgpu/macpro61-amdgpu-si-dpm-performance.patch` (from flammafex/linux-mac), builds it with `M=` against the base image's `kernel-devel`, and strips it. Without the symlink of `amd/` into the kernel-devel tree, the trace headers fail to compile.
      - `build.sh` overwrites the stock `amdgpu.ko`, then runs `depmod` and regenerates the initramfs, which contains amdgpu.
-     - The patch only takes effect in the `performance` power state. The udev rule `system_files/usr/lib/udev/rules.d/90-macpro-gpu-performance.rules` sets that state at boot.
+     - The patch only takes effect in the `performance` power state. The udev rule `system_files/usr/lib/udev/rules.d/90-macpro-gpu-performance.rules` sets it at boot on the display card 06:00.0 only; the compute card 02:00.0 stays `balanced` (300/150 MHz) to run cooler.
      - Kernel module signing is not enforced: no Secure Boot on this Mac, and lockdown is `none`.
    - Suspend is masked in `build.sh`: the machine hung on resume from deep suspend, and it runs always-on services.
 5. Server stack:

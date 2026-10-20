@@ -1,2 +1,3 @@
-# Patched si_dpm pins the D700 to its top VBIOS clocks only in the "performance" state
-ACTION=="add", SUBSYSTEM=="drm", ENV{DEVTYPE}=="drm_minor", KERNEL=="card[0-9]*", ATTRS{vendor}=="0x1002", ATTR{device/power_dpm_state}="performance"
+# Patched si_dpm pins the D700 to its top VBIOS clocks only in the "performance" state.
+# Only the display card (06:00.0) gets it; the compute card stays "balanced" to run cooler
+ACTION=="add", SUBSYSTEM=="drm", ENV{DEVTYPE}=="drm_minor", KERNEL=="card[0-9]*", KERNELS=="0000:06:00.0", ATTR{device/power_dpm_state}="performance"
