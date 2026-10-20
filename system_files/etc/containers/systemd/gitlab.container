@@ -4,17 +4,18 @@ Wants=network-online.target
 After=network-online.target
 
 [Container]
-Image=docker.io/gitlab/gitlab-ce:latest
+# Pinned: backup restore needs the exact version; upgrade deliberately, one minor at a time
+Image=docker.io/gitlab/gitlab-ce:19.4.2-ce.0
 ContainerName=gitlab
 # HTTP only on localhost: nginx proxies it; SSH on 2222 because the host sshd owns 22
 PublishPort=127.0.0.1:8929:80
 PublishPort=2222:22
 ShmSize=256m
-Volume=gitlab-config:/etc/gitlab
-Volume=gitlab-logs:/var/log/gitlab
-Volume=gitlab-data:/var/opt/gitlab
-# Set external_url to the name other machines use to reach this Mac Pro
-Environment=GITLAB_OMNIBUS_CONFIG="external_url 'http://mac-pro.local'; gitlab_rails['gitlab_shell_ssh_port'] = 2222"
+Volume=gitlab19-config:/etc/gitlab
+Volume=gitlab19-logs:/var/log/gitlab
+Volume=gitlab19-data:/var/opt/gitlab
+# external_url is the address other machines (and CI containers) use to reach this Mac Pro
+Environment=GITLAB_OMNIBUS_CONFIG="external_url 'http://192.168.1.127'; gitlab_rails['gitlab_shell_ssh_port'] = 2222; gitlab_rails['time_zone'] = 'Europe/Moscow'; gitlab_rails['usage_ping_enabled'] = false"
 
 [Service]
 # First start pulls a multi-GB image and runs reconfigure
