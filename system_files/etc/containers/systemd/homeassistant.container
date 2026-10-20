@@ -10,6 +10,13 @@ ContainerName=homeassistant
 Network=host
 Volume=homeassistant-config:/config
 Volume=/etc/localtime:/etc/localtime:ro
+# Bluetooth goes through BlueZ on the host D-Bus; DHCP discovery sniffs raw packets
+Volume=/run/dbus:/run/dbus:ro
+AddCapability=NET_ADMIN NET_RAW
+# container_t may not talk to the host system bus
+SecurityLabelDisable=true
+# Zigbee coordinator (CP2102N); "-" skips it when unplugged
+AddDevice=-/dev/serial/by-id/usb-Silicon_Labs_CP2102N_USB_to_UART_Bridge_Controller_462d439caad8f011b62bf026c6dc3c96-if00-port0
 
 [Service]
 TimeoutStartSec=900
