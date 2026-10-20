@@ -1,0 +1,21 @@
+[Unit]
+Description=lumina-world worker igrs.lumina.node.0
+Wants=network-online.target
+After=network-online.target postgis.service
+Requires=postgis.service
+
+[Container]
+# Built locally by lumina-world/images/build.sh (docker build, then loaded into podman)
+Image=docker.io/lumina-world/node:latest
+Pull=never
+ContainerName=lumina-world-worker
+Environment=LUMINA_WORLD_NODE=igrs.lumina.node.0
+EnvironmentFile=/etc/lumina-world/node.env
+Volume=/var/lib/lumina-world:/data:Z
+
+[Service]
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
