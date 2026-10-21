@@ -9,6 +9,8 @@ Requires=postgis.service
 Image=docker.io/lumina-world/node:latest
 Pull=never
 ContainerName=lumina-world-worker
+# lets the worker finish the current task on stop instead of losing it after 10 s
+StopTimeout=600
 Environment=LUMINA_WORLD_NODE=igrs.lumina.node.0
 EnvironmentFile=/etc/lumina-world/node.env
 Volume=/var/lib/lumina-world:/data:Z
