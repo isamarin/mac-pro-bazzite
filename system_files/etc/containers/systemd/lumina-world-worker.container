@@ -12,6 +12,8 @@ ContainerName=lumina-world-worker
 Environment=LUMINA_WORLD_NODE=igrs.lumina.node.0
 EnvironmentFile=/etc/lumina-world/node.env
 Volume=/var/lib/lumina-world:/data:Z
+# host OS for the hardware snapshot in the build journal (the container is Debian)
+Volume=/etc/os-release:/run/host/os-release:ro
 
 [Service]
 Restart=always
