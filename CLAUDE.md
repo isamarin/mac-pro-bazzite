@@ -42,6 +42,7 @@ There are no tests. The real validation is the final `RUN bootc container lint` 
      - The CI runner `mac-pro-docker` is a Docker container (`docker run --restart unless-stopped`, volume `gitlab-runner-config`, mounts the Docker socket), so jobs run in Docker, not podman. CI images `lumina-ci/node-uv:1` and `lumina-ci/tauri:1` are built locally on the machine from `~/gitlab-ci/images`.
    - GitLab HTTP listens on `127.0.0.1:8929` behind nginx (`etc/nginx/conf.d/gitlab.conf`, `default_server` on :80), and GitLab SSH is on port 2222. The `nginx.service.d` drop-in turns on the SELinux boolean `httpd_can_network_connect`; without it the proxy returns 502.
    - Home Assistant uses host networking and is served directly on :8123.
+   - lumina-world (tile build cluster, this machine is node `igrs.lumina.node.0`): `postgis.container` (PostGIS 17-3.5, pinned) publishes 5432 on 127.0.0.1 and 192.168.1.127 only, with `pg_hba` limited to 192.168.1.0/24 and the podman network; `lumina-world-worker.container` runs the node image `docker.io/lumina-world/node:latest` (`Pull=never`), which `lumina-world/images/build.sh` builds with docker and loads into podman. Secrets live in `/etc/lumina-world/{postgis,node}.env` (0600, not in the image), data in `/var/lib/lumina-world`.
 6. Static config files belong in `system_files/`, not in heredocs in `build.sh`. Prefer `/usr` over `/etc`; `/var` and `/opt` are not reliably preserved by bootc deploys (see the commented `/opt` note in `Containerfile`).
 
 ## Configuration

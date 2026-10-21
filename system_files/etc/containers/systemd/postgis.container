@@ -1,0 +1,25 @@
+[Unit]
+Description=PostGIS for lumina-world (coordinator database of igrs.lumina.node.0)
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+# Pinned: osm2pgsql flex tables and the lumina-world schema are tested against this version
+Image=docker.io/postgis/postgis:17-3.5
+ContainerName=postgis
+# Local clients and the LAN only; pg_hba narrows it further to 192.168.1.0/24 and the podman network
+PublishPort=127.0.0.1:5432:5432
+PublishPort=192.168.1.127:5432:5432
+ShmSize=1g
+Volume=postgis-data:/var/lib/postgresql/data
+Volume=/etc/lumina-world/pg_hba.conf:/etc/lumina-world/pg_hba.conf:ro,Z
+EnvironmentFile=/etc/lumina-world/postgis.env
+# Sized for osm2pgsql imports on 94 GB RAM
+Exec=postgres -c hba_file=/etc/lumina-world/pg_hba.conf -c shared_buffers=8GB -c work_mem=256MB -c maintenance_work_mem=4GB -c max_wal_size=8GB -c effective_cache_size=48GB -c listen_addresses=*
+
+[Service]
+TimeoutStartSec=600
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
