@@ -14,7 +14,11 @@ StopTimeout=600
 Environment=LUMINA_WORLD_NODE=igrs.lumina.node.0
 # N builder processes sized by node memory and the peak RSS of its recent build runs;
 # a stop is forwarded to every builder, each finishes its current task
-Exec=lumina-world worker --node igrs.lumina.node.0 --jobs auto
+# all 24 threads: the user runs this Mac Pro flat out (fan at max via mac-fan-max.service);
+# the worker's thermal guard stops leasing builds at 95 °C and resumes at 88 °C (sensor crit is 99 °C)
+Environment=LUMINA_WORLD_THERMAL_PAUSE_C=95
+Environment=LUMINA_WORLD_THERMAL_RESUME_C=88
+Exec=lumina-world worker --node igrs.lumina.node.0 --jobs 24
 EnvironmentFile=/etc/lumina-world/node.env
 Volume=/var/lib/lumina-world:/data:Z
 # host OS for the hardware snapshot in the build journal (the container is Debian)
