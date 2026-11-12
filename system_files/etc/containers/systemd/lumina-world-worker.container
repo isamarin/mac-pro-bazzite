@@ -20,7 +20,8 @@ Environment=LUMINA_WORLD_THERMAL_PAUSE_C=95
 Environment=LUMINA_WORLD_THERMAL_RESUME_C=88
 Exec=lumina-world worker --node igrs.lumina.node.0 --jobs 24
 EnvironmentFile=/etc/lumina-world/node.env
-Volume=/var/lib/lumina-world:/data:Z
+# :z (shared label), not :Z: lumina-world-www reads /data/publish too, and a private :Z label would lock it out
+Volume=/var/lib/lumina-world:/data:z
 # host OS for the hardware snapshot in the build journal (the container is Debian)
 Volume=/etc/os-release:/run/host/os-release:ro
 
