@@ -11,8 +11,8 @@ PublishPort=127.0.0.1:8930:80
 # Written by the worker's `publish`; :z (shared label) because the worker mounts the same tree
 Volume=/var/lib/lumina-world/publish:/usr/share/nginx/html/world:ro,z
 ReadOnly=true
+# podman's ReadOnly=true already mounts tmpfs on /run, /tmp and /dev (--read-only-tmpfs default)
 Tmpfs=/var/cache/nginx
-Tmpfs=/run
 
 [Service]
 # the bind source must exist before podman starts (a fresh node has no publish/ yet)
