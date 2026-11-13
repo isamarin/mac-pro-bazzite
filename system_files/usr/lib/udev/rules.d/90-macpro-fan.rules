@@ -1,2 +1,4 @@
 # The SMC fan curve favours silence (D700s idle at 80+ °C); raise the floor, SMC still ramps above it
-ACTION=="add", SUBSYSTEM=="hwmon", ATTRS{name}=="applesmc", ATTR{device/fan1_min}="1300"
+# older kernels: fan files on the platform device; kernel 7.x: on the hwmon device itself
+ACTION=="add", SUBSYSTEM=="hwmon", ATTRS{name}=="applesmc", TEST=="device/fan1_min", ATTR{device/fan1_min}="1300"
+ACTION=="add", SUBSYSTEM=="hwmon", ATTR{name}=="applesmc", TEST=="fan1_min", ATTR{fan1_min}="1300"

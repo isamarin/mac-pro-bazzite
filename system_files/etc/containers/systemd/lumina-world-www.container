@@ -2,12 +2,15 @@
 Description=lumina-world static server (published tiles, region catalogs, packs)
 Wants=network-online.target
 After=network-online.target
+# the first start pulls nginx, and at boot DNS (technitium-dns container) may not be up yet: retry forever
+StartLimitIntervalSec=0
 
 [Container]
 Image=docker.io/library/nginx:1.27-alpine
 ContainerName=lumina-world-www
-# Loopback only: the host nginx (conf.d/gitlab.conf) proxies /world/ here
-PublishPort=127.0.0.1:8930:80
+# Loopback only: the host nginx (conf.d/gitlab.conf) proxies /world/ here;
+# 8930/8931 are taken by igor's rootless searxng containers
+PublishPort=127.0.0.1:8940:80
 # Written by the worker's `publish`; :z (shared label) because the worker mounts the same tree
 Volume=/var/lib/lumina-world/publish:/usr/share/nginx/html/world:ro,z
 ReadOnly=true
@@ -18,6 +21,7 @@ Tmpfs=/var/cache/nginx
 # the bind source must exist before podman starts (a fresh node has no publish/ yet)
 ExecStartPre=/usr/bin/mkdir -p /var/lib/lumina-world/publish
 Restart=always
+RestartSec=15
 
 [Install]
 WantedBy=multi-user.target
