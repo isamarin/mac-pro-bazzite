@@ -5,8 +5,10 @@ After=systemd-modules-load.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/bin/sh -c 'd=/sys/devices/platform/applesmc.768; echo 1 > $d/fan1_manual && cat $d/fan1_max > $d/fan1_output'
-ExecStop=/bin/sh -c 'echo 0 > /sys/devices/platform/applesmc.768/fan1_manual'
+# kernel 7.x moved the applesmc fan files to the standard hwmon ones (hwmon/hwmonN: pwm1_enable 1 = manual,
+# 2 = SMC auto; fan1_target); older kernels have fan1_manual/fan1_output on the platform device
+ExecStart=/bin/sh -c 'd=/sys/devices/platform/applesmc.768; h=$(echo $d/hwmon/hwmon*); if [ -e $h/pwm1_enable ]; then echo 1 > $h/pwm1_enable && cat $h/fan1_max > $h/fan1_target; else echo 1 > $d/fan1_manual && cat $d/fan1_max > $d/fan1_output; fi'
+ExecStop=/bin/sh -c 'd=/sys/devices/platform/applesmc.768; h=$(echo $d/hwmon/hwmon*); if [ -e $h/pwm1_enable ]; then echo 2 > $h/pwm1_enable; else echo 0 > $d/fan1_manual; fi'
 
 [Install]
 WantedBy=multi-user.target
