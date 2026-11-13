@@ -21,7 +21,7 @@ systemctl mask sleep.target suspend.target hibernate.target hybrid-sleep.target
 
 ### Server stack: Docker, nginx (proxy for GitLab); GitLab and Home Assistant run as quadlets from /etc/containers/systemd
 dnf5 install -y moby-engine docker-compose nginx
-systemctl enable docker.service nginx.service
+systemctl enable docker.service nginx.service mac-fan-max.service
 # 2222 and 8123 are already open: the FedoraWorkstation zone allows 1025-65535
 firewall-offline-cmd --add-service=http
 
